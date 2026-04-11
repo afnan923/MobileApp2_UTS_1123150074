@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uts_1123150074/core/constants/api_constants.dart';
-import 'package:uts_1123150074/core/constants/secure_storage.dart';
+import 'package:uts_1123150074/core/services/secure_storage.dart';
 
 class DioClient { 
   static Dio? _instance; 
