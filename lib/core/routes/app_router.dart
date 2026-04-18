@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uts_1123150074/core/guard/auth_guard.dart';
 import 'package:uts_1123150074/features/auth/presentation/pages/login_page.dart';
 import 'package:uts_1123150074/features/auth/presentation/pages/register.page.dart';
 import 'package:uts_1123150074/features/auth/presentation/pages/verify_email.dart';
