@@ -4,6 +4,7 @@ import 'package:uts_1123150074/features/auth/presentation/pages/login_page.dart'
 import 'package:uts_1123150074/features/auth/presentation/pages/register_page.dart';
 import 'package:uts_1123150074/features/auth/presentation/pages/verify_email.dart';
 import 'package:uts_1123150074/features/dashboard/presentation/pages/dashboard_page.dart';
+import 'package:uts_1123150074/features/dashboard/presentation/pages/splash_screen.dart';
 
 class AppRouter { 
   static const String splash      = '/'; 
@@ -13,7 +14,7 @@ class AppRouter {
   static const String dashboard   = '/dashboard'; 
  
   static Map<String, WidgetBuilder> get routes => { 
-
+    splash: (_) => const SplashPage(),
     login:       (_) => const LoginPage(), 
     register:    (_) => const RegisterPage(), 
     verifyEmail: (_) => const VerifyEmailPage(), 

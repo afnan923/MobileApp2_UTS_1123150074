@@ -17,17 +17,22 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _checkAuth() async {
-    await Future.delayed(const Duration(seconds: 2));
+  await Future.delayed(const Duration(seconds: 2));
 
-    if (!mounted) return;
+  if (!mounted) return;
 
+  try {
     final token = await SecureStorageService.getToken();
 
-    final route =
-        token != null ? AppRouter.dashboard : AppRouter.login;
-
-    Navigator.pushReplacementNamed(context, route);
+    Navigator.pushReplacementNamed(
+      context,
+      token != null ? AppRouter.dashboard : AppRouter.login,
+    );
+  } catch (e) {
+    print("ERROR STORAGE: $e"); // 🔥 biar kelihatan di console
+    Navigator.pushReplacementNamed(context, AppRouter.login);
   }
+}
 
   @override
   Widget build(BuildContext context) =>

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uts_1123150074/core/constants/app_colors.dart';
 import 'package:uts_1123150074/core/routes/app_router.dart';
 import 'package:uts_1123150074/features/auth/presentation/providers/auth_provider.dart';
 import 'package:uts_1123150074/features/dashboard/presentation/providers/product_provider.dart';
@@ -23,68 +24,74 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-    final product = context.watch<ProductProvider>();
+Widget build(BuildContext context) {
+  final auth = context.watch<AuthProvider>();
+  final product = context.watch<ProductProvider>();
 
-    return Scaffold(
+  return Container(
+    decoration: const BoxDecoration(
+      gradient: AppColors.oceanGradient // 🌊 background laut
+    ),
+    child: Scaffold(
+      backgroundColor: Colors.transparent, // 🔥 wajib
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Dashboard', style: TextStyle(fontSize: 18)),
+            const Text(
+              'Dashboard',
+              style: TextStyle(fontSize: 18, color: Colors.white),
+            ),
             Text(
-              'Halo Pemancing, ${auth.firebaseUser?.displayName ?? 'User'}!',
+              'Halo Pemancing 🎣, ${auth.firebaseUser?.displayName ?? 'User'}!',
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.normal,
+                color: Colors.white70,
               ),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () async {
               await auth.logout();
               if (!mounted) return;
-
-              Navigator.pushReplacementNamed(
-                context,
-                AppRouter.login,
-              );
+              Navigator.pushReplacementNamed(context, AppRouter.login);
             },
           ),
         ],
       ),
 
       body: switch (product.status) {
-        // Loading
         ProductStatus.loading || ProductStatus.initial =>
           const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(),
+                CircularProgressIndicator(color: Colors.white),
                 SizedBox(height: 16),
-                Text('Memuat produk pancingan josjis...'),
+                Text(
+                  'Memuat produk pancingan josjis...',
+                  style: TextStyle(color: Colors.white),
+                ),
               ],
             ),
           ),
 
-        // Error
         ProductStatus.error =>
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: Colors.red,
-                ),
+                const Icon(Icons.error_outline,
+                    size: 64, color: Colors.white),
                 const SizedBox(height: 16),
-                Text(product.error ?? 'Terjadi kesalahan Mas'),
+                Text(
+                  product.error ?? 'Terjadi kesalahan Mas',
+                  style: const TextStyle(color: Colors.white),
+                ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.refresh),
@@ -95,7 +102,6 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
 
-        // Loaded
         ProductStatus.loaded =>
           RefreshIndicator(
             onRefresh: () => product.fetchProducts(),
@@ -112,18 +118,17 @@ class _DashboardPageState extends State<DashboardPage> {
               itemBuilder: (context, i) {
                 final p = product.products[i];
 
-                return Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2), // 🧊 glass
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Image
                       ClipRRect(
                         borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(12),
+                          top: Radius.circular(16),
                         ),
                         child: Image.network(
                           p.imageUrl,
@@ -132,16 +137,16 @@ class _DashboardPageState extends State<DashboardPage> {
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
                             height: 120,
-                            color: Colors.grey.shade200,
+                            color: Colors.black26,
                             child: const Icon(
                               Icons.image_not_supported,
                               size: 40,
+                              color: Colors.white,
                             ),
                           ),
                         ),
                       ),
 
-                      // Content
                       Padding(
                         padding: const EdgeInsets.all(10),
                         child: Column(
@@ -152,6 +157,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
+                                color: Colors.white,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -162,7 +168,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             Text(
                               'Rp ${p.price.toStringAsFixed(0)}',
                               style: const TextStyle(
-                                color: Color(0xFF1565C0),
+                                color: Colors.yellow,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -175,14 +181,14 @@ class _DashboardPageState extends State<DashboardPage> {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.blue.shade50,
+                                color: Colors.white.withOpacity(0.3),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
                                 p.category,
                                 style: const TextStyle(
                                   fontSize: 11,
-                                  color: Color(0xFF1565C0),
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
@@ -196,6 +202,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
       },
-    );
-  }
+    ),
+  );
+}
 }
