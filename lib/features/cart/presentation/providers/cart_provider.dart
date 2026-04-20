@@ -22,16 +22,18 @@ class CartProvider extends ChangeNotifier {
     );
   }
 
-  Future<void> fetchCart() async {
-    _setLoading();
-    try {
-      _items = await repository.getCart();
-    } catch (e) {
-      _error = 'Gagal ambil cart';
-    }
-    _isLoading = false;
-    notifyListeners();
+ Future<void> fetchCart() async {
+  _setLoading();
+  try {
+    final data = await repository.getCart();
+
+    _items = List.from(data);
+  } catch (e) {
+    _error = 'Gagal ambil cart';
   }
+  _isLoading = false;
+  notifyListeners();
+}
 
   Future<void> addToCart(int productId, int qty) async {
     await repository.addToCart(productId, qty);
