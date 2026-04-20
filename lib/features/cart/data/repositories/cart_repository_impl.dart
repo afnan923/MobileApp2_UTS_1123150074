@@ -1,17 +1,34 @@
-abstract class CartRepository {
-  Future<List<dynamic>> getCart();
+import '../../domain/entities/cart_entity.dart';
+import '../../domain/repositories/cart_repository.dart';
+import '../datasources/cart_remote_datasource.dart';
 
-  Future<void> addToCart({
-    required int productId,
-    required int quantity,
-  });
+class CartRepositoryImpl implements CartRepository {
+  final CartRemoteDataSource remote;
 
-  Future<void> updateCartItem({
-    required int id,
-    required int quantity,
-  });
+  CartRepositoryImpl(this.remote);
 
-  Future<void> removeCartItem(int id);
+  @override
+  Future<List<CartItemEntity>> getCart() async {
+    return await remote.getCart();
+  }
 
-  Future<void> clearCart();
+  @override
+  Future<void> addToCart(int productId, int quantity) {
+    return remote.addToCart(productId, quantity);
+  }
+
+  @override
+  Future<void> updateCart(int id, int quantity) {
+    return remote.updateCart(id, quantity);
+  }
+
+  @override
+  Future<void> deleteItem(int id) {
+    return remote.deleteItem(id);
+  }
+
+  @override
+  Future<void> clearCart() {
+    return remote.clearCart();
+  }
 }
