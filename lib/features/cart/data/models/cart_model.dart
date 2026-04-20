@@ -7,15 +7,19 @@ class CartItemModel extends CartItemEntity {
     required super.productName,
     required super.price,
     required super.quantity,
+    required super.imageUrl, 
   });
 
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
+    final product = json['product'];
+
     return CartItemModel(
-      id: json['id'],
+      id: json['ID'], 
       productId: json['product_id'],
-      productName: json['product_name'] ?? '-',
-      price: json['price'],
+      productName: product['name'],
+      price: (product['price'] as num).toDouble(),
       quantity: json['quantity'],
+      imageUrl: product['image_url'],
     );
   }
 }
