@@ -3,6 +3,7 @@ import 'package:uts_1123150074/core/guard/auth_guard.dart';
 import 'package:uts_1123150074/features/auth/presentation/pages/login_page.dart';
 import 'package:uts_1123150074/features/auth/presentation/pages/register_page.dart';
 import 'package:uts_1123150074/features/auth/presentation/pages/verify_email.dart';
+import 'package:uts_1123150074/features/cart/presentation/pages/cart_page.dart';
 import 'package:uts_1123150074/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:uts_1123150074/features/dashboard/presentation/pages/splash_screen.dart';
 
@@ -23,7 +24,7 @@ class AppRouter {
     verifyEmail: (_) => const VerifyEmailPage(),  
     dashboard:   (_) => const AuthGuard(child: DashboardPage()), 
     cart: (_) => const AuthGuard(child: CartPage()),
-    orders: (_) => const AuthGuard(child: OrdersPage()),
-    checkout: (_) => const AuthGuard(child: CheckoutPage()), 
+    // orders: (_) => const AuthGuard(child: OrdersPage()),
+    // checkout: (_) => const AuthGuard(child: CheckoutPage()), 
   }; 
 }
