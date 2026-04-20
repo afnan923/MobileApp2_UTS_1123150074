@@ -11,13 +11,19 @@ class AppRouter {
   static const String login       = '/login'; 
   static const String register    = '/register'; 
   static const String verifyEmail = '/verify-email'; 
-  static const String dashboard   = '/dashboard'; 
+  static const String dashboard   = '/dashboard';
+  static const String cart        = '/cart';  
+  static const String orders      = '/orders'; 
+  static const String checkout = '/checkout';
  
   static Map<String, WidgetBuilder> get routes => { 
     splash: (_) => const SplashPage(),
     login:       (_) => const LoginPage(), 
     register:    (_) => const RegisterPage(), 
-    verifyEmail: (_) => const VerifyEmailPage(), 
+    verifyEmail: (_) => const VerifyEmailPage(),  
     dashboard:   (_) => const AuthGuard(child: DashboardPage()), 
+    cart: (_) => const AuthGuard(child: CartPage()),
+    orders: (_) => const AuthGuard(child: OrdersPage()),
+    checkout: (_) => const AuthGuard(child: CheckoutPage()), 
   }; 
 }
