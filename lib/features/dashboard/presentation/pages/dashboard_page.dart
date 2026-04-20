@@ -4,6 +4,7 @@ import 'package:uts_1123150074/core/constants/app_colors.dart';
 import 'package:uts_1123150074/core/routes/app_router.dart';
 import 'package:uts_1123150074/features/auth/presentation/providers/auth_provider.dart';
 import 'package:uts_1123150074/features/dashboard/presentation/providers/product_provider.dart';
+import 'package:uts_1123150074/features/cart/presentation/providers/cart_provider.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -17,56 +18,89 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
 
-    // Fetch produk begitu halaman dibuka
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProductProvider>().fetchProducts();
     });
   }
 
   @override
-Widget build(BuildContext context) {
-  final auth = context.watch<AuthProvider>();
-  final product = context.watch<ProductProvider>();
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final product = context.watch<ProductProvider>();
 
-  return Container(
-    decoration: const BoxDecoration(
-      gradient: AppColors.oceanGradient // 🌊 background laut
-    ),
-    child: Scaffold(
-      backgroundColor: Colors.transparent, // 🔥 wajib
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Dashboard',
-              style: TextStyle(fontSize: 18, color: Colors.white),
-            ),
-            Text(
-              'Halo Pemancing 🎣, ${auth.firebaseUser?.displayName ?? 'User'}!',
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.normal,
-                color: Colors.white70,
+    return Container(
+      decoration: const BoxDecoration(gradient: AppColors.oceanGradient),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Dashboard',
+                style: TextStyle(fontSize: 18, color: Colors.white),
               ),
+              Text(
+                'Halo Pemancing 🎣, ${auth.firebaseUser?.displayName ?? 'User'}!',
+                style: const TextStyle(fontSize: 13, color: Colors.white70),
+              ),
+            ],
+          ),
+          actions: [
+            Consumer<CartProvider>(
+              builder: (context, cart, _) {
+                return Stack(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.shopping_cart),
+                      onPressed: () {
+                        Navigator.pushNamed(context, AppRouter.cart);
+                      },
+                    ),
+
+                    // BADGE
+                    if (cart.items.isNotEmpty)
+                      Positioned(
+                        right: 2,
+                        top: 2,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18,
+                          ),
+                          child: Text(
+                            '${cart.items.fold(0, (sum, item) => sum + item.quantity)}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+
+            // logout
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () async {
+                await auth.logout();
+                Navigator.pushReplacementNamed(context, AppRouter.login);
+              },
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: () async {
-              await auth.logout();
-              if (!mounted) return;
-              Navigator.pushReplacementNamed(context, AppRouter.login);
-            },
-          ),
-        ],
-      ),
 
-      body: switch (product.status) {
-        ProductStatus.loading || ProductStatus.initial =>
-          const Center(
+        body: switch (product.status) {
+          ProductStatus.loading || ProductStatus.initial => const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -80,13 +114,11 @@ Widget build(BuildContext context) {
             ),
           ),
 
-        ProductStatus.error =>
-          Center(
+          ProductStatus.error => Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline,
-                    size: 64, color: Colors.white),
+                const Icon(Icons.error_outline, size: 64, color: Colors.white),
                 const SizedBox(height: 16),
                 Text(
                   product.error ?? 'Terjadi kesalahan Mas',
@@ -102,13 +134,11 @@ Widget build(BuildContext context) {
             ),
           ),
 
-        ProductStatus.loaded =>
-          RefreshIndicator(
+          ProductStatus.loaded => RefreshIndicator(
             onRefresh: () => product.fetchProducts(),
             child: GridView.builder(
               padding: const EdgeInsets.all(16),
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 childAspectRatio: 0.75,
                 crossAxisSpacing: 12,
@@ -120,12 +150,13 @@ Widget build(BuildContext context) {
 
                 return Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2), // 🧊 glass
+                    color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // IMAGE
                       ClipRRect(
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(16),
@@ -147,6 +178,7 @@ Widget build(BuildContext context) {
                         ),
                       ),
 
+                      // CONTENT
                       Padding(
                         padding: const EdgeInsets.all(10),
                         child: Column(
@@ -192,6 +224,42 @@ Widget build(BuildContext context) {
                                 ),
                               ),
                             ),
+
+                            const SizedBox(height: 8),
+
+                            // 🛒 ADD TO CART BUTTON
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                ),
+                                icon: const Icon(
+                                  Icons.add_shopping_cart,
+                                  size: 16,
+                                ),
+                                label: const Text("Keranjang"),
+                                onPressed: () async {
+                                  await context.read<CartProvider>().addToCart(
+                                    p.ID,
+                                    1,
+                                  );
+
+                                  if (!mounted) return;
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Berhasil ditambahkan ke keranjang',
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -201,8 +269,8 @@ Widget build(BuildContext context) {
               },
             ),
           ),
-      },
-    ),
-  );
-}
+        },
+      ),
+    );
+  }
 }
