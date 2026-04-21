@@ -42,7 +42,10 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               Text(
                 'Halo Pemancing 🎣, ${auth.firebaseUser?.displayName ?? 'User'}!',
-                style: const TextStyle(fontSize: 13, color: Colors.white70),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.yellowAccent,
+                ),
               ),
             ],
           ),
@@ -52,6 +55,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 return Stack(
                   children: [
                     IconButton(
+                      tooltip: "Cart",
                       icon: const Icon(Icons.shopping_cart),
                       onPressed: () {
                         Navigator.pushNamed(context, AppRouter.cart);
@@ -88,12 +92,56 @@ class _DashboardPageState extends State<DashboardPage> {
               },
             ),
 
-            // logout
             IconButton(
+              tooltip: "Logout",
               icon: const Icon(Icons.logout),
-              onPressed: () async {
-                await auth.logout();
-                Navigator.pushReplacementNamed(context, AppRouter.login);
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    backgroundColor: AppColors.primary,
+                    title: const Text(
+                      "Keluar akun?",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    content: const Text(
+                      "Apakah kamu yakin ingin logout?",
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                          "Batal",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          Navigator.pop(context); // tutup dialog dulu
+
+                          await auth.logout();
+
+                          if (!mounted) return;
+
+                          Navigator.pushReplacementNamed(
+                            context,
+                            AppRouter.login,
+                          );
+
+                          // 🔥 feedback
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Berhasil logout")),
+                          );
+                        },
+                        child: const Text(
+                          "Keluar",
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
               },
             ),
           ],
