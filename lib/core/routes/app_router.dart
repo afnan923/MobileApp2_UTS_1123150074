@@ -7,6 +7,8 @@ import 'package:uts_1123150074/features/cart/presentation/pages/cart_page.dart';
 import 'package:uts_1123150074/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:uts_1123150074/features/dashboard/presentation/pages/splash_screen.dart';
 
+// lib/core/routes/app_router.dart
+
 class AppRouter { 
   static const String splash      = '/'; 
   static const String login       = '/login'; 
@@ -15,7 +17,6 @@ class AppRouter {
   static const String dashboard   = '/dashboard';
   static const String cart        = '/cart';  
   static const String orders      = '/orders'; 
-  static const String checkout = '/checkout';
  
   static Map<String, WidgetBuilder> get routes => { 
     splash: (_) => const SplashPage(),
@@ -23,8 +24,6 @@ class AppRouter {
     register:    (_) => const RegisterPage(), 
     verifyEmail: (_) => const VerifyEmailPage(),  
     dashboard:   (_) => const AuthGuard(child: DashboardPage()), 
-    cart: (_) => const AuthGuard(child: CartPage()),
-    // orders: (_) => const AuthGuard(child: OrdersPage()),
-    // checkout: (_) => const AuthGuard(child: CheckoutPage()), 
+    cart:        (_) => const AuthGuard(child: CartPage()),
   }; 
 }
