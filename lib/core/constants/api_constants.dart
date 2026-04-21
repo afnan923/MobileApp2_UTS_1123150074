@@ -10,13 +10,6 @@ class ApiConstants {
   // Cart
   static const String cart = '/cart';
 
-  // Orders
-  static const String orders = '/orders';
-  static const String checkout = '/orders/checkout';
-
-  // Admin Orders
-  static const String adminOrders = '/admin/orders';
-
   // Timeout
   static const int connectTimeout = 15000;
   static const int receiveTimeout = 15000;
