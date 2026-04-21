@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uts_1123150074/core/constants/app_colors.dart';
 import 'package:uts_1123150074/core/constants/app_strings.dart';
-import 'package:uts_1123150074/core/routes/app_router.dart';
 import 'package:uts_1123150074/features/cart/presentation/providers/cart_provider.dart';
 
 class CartPage extends StatefulWidget {
@@ -159,7 +158,49 @@ class _CartPageState extends State<CartPage> {
                         Icons.delete_outline,
                         color: Colors.white70,
                       ),
-                      onPressed: () => cart.removeItem(item.id),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            backgroundColor: AppColors.primary,
+                            title: const Text(
+                              "Hapus produk?",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            content: Text(
+                              "Hapus ${item.productName} dari keranjang?",
+                              style: const TextStyle(color: Colors.white70),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text(
+                                  "Batal",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () async {
+                                  await cart.removeItem(item.id);
+                                  Navigator.pop(context);
+
+                                  if (!mounted) return;
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Produk berhasil dihapus"),
+                                    ),
+                                  );
+                                },
+                                child: const Text(
+                                  "Hapus",
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -211,16 +252,6 @@ class _CartPageState extends State<CartPage> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, AppRouter.checkout);
-              },
-              child: Text(AppStrings.checkout),
-            ),
-          ),
         ],
       ),
     );
@@ -243,14 +274,14 @@ class _CartPageState extends State<CartPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Batal", style: TextStyle(color: Colors.white)),
+            child: const Text("Batal", style: TextStyle(color: Colors.white),),
           ),
           TextButton(
             onPressed: () {
               context.read<CartProvider>().clearCart();
               Navigator.pop(context);
             },
-            child: const Text("Hapus", style: TextStyle(color: Colors.white)),
+            child: const Text("Hapus", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
