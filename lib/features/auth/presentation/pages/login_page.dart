@@ -5,6 +5,7 @@ import 'package:uts_1123150074/core/constants/app_colors.dart';
 import 'package:uts_1123150074/core/routes/app_router.dart';
 import 'package:uts_1123150074/features/auth/presentation/providers/auth_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:uts_1123150074/core/services/biometric_service.dart';
 import 'package:uts_1123150074/features/auth/presentation/widgets/auth_header.dart';
 import 'package:uts_1123150074/features/auth/presentation/widgets/custom_button.dart';
 import 'package:uts_1123150074/features/auth/presentation/widgets/custom_text_field.dart';
@@ -24,6 +25,7 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final BiometricService _biometricService = BiometricService();
 
   bool _showPass = false;
 
@@ -37,6 +39,9 @@ class _LoginPageState extends State<LoginPage> {
   // ─── Login Email ─────────────────────────────────────────
   Future<void> _loginEmail() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final okBio = await _biometricService.authenticate();
+    if (!okBio) return;
 
     final auth = context.read<AuthProvider>();
 
@@ -66,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
     if (ok) {
       final cart = context.read<CartProvider>();
 
-      cart.clearLocalCart(); 
+      cart.clearLocalCart();
       await cart.fetchCart();
       Navigator.pushReplacementNamed(context, AppRouter.dashboard);
     } else if (auth.status == AuthStatus.emailNotVerified) {
