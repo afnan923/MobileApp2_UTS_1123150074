@@ -50,19 +50,4 @@ class AppStrings {
   static const String emptyCart = 'Keranjang kosong';
   static const String totalPrice = 'Total Harga';
   static const String clearCart = 'Kosongkan Keranjang';
-
-  // CHECKOUT
-  static const String checkout = 'Checkout';
-  static const String shippingAddress = 'Alamat Pengiriman';
-  static const String enterAddress = 'Masukkan alamat pengiriman';
-  static const String paymentMethod = 'Metode Pembayaran';
-  static const String placeOrder = 'Buat Pesanan';
-
-  // ORDERS
-  static const String myOrders = 'Pesanan Saya';
-  static const String orderDetail = 'Detail Pesanan';
-  static const String orderStatus = 'Status Pesanan';
-  static const String orderSuccess = 'Pesanan berhasil dibuat';
-  static const String orderFailed = 'Gagal membuat pesanan';
-  static const String noOrders = 'Belum ada pesanan';
 }

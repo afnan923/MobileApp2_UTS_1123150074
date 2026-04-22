@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uts_1123150074/core/constants/app_colors.dart';
 import 'package:uts_1123150074/core/constants/app_strings.dart';
+import 'package:uts_1123150074/core/services/notification_service.dart';
+import 'package:uts_1123150074/core/utils/currency_helper.dart';
 import 'package:uts_1123150074/features/cart/presentation/providers/cart_provider.dart';
 
 class CartPage extends StatefulWidget {
@@ -29,18 +31,17 @@ class _CartPageState extends State<CartPage> {
       decoration: const BoxDecoration(gradient: AppColors.oceanGradient),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-
         appBar: AppBar(
           title: Text(AppStrings.cart),
           actions: [
             if (cart.items.isNotEmpty)
               IconButton(
+                tooltip: "Hapus semua",
                 icon: const Icon(Icons.delete_outline),
                 onPressed: () => _showClearDialog(context),
               ),
           ],
         ),
-
         body: cart.isLoading
             ? const Center(
                 child: CircularProgressIndicator(color: Colors.white),
@@ -87,27 +88,21 @@ class _CartPageState extends State<CartPage> {
             border: Border.all(color: AppColors.glassBorder),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             child: Row(
               children: [
-                // ICON
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      item.imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.image),
-                    ),
+                // IMAGE
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    item.imageUrl,
+                    width: 90,
+                    height: 90,
+                    fit: BoxFit.cover,
                   ),
                 ),
 
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
 
                 // INFO
                 Expanded(
@@ -116,43 +111,31 @@ class _CartPageState extends State<CartPage> {
                     children: [
                       Text(
                         item.productName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
+                          fontSize: 15,
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
-                        'Rp ${item.price}',
-                        style: const TextStyle(color: Colors.white70),
+                        formatRupiah(item.price),
+                        style: const TextStyle(
+                          color: Colors.yellow,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
                 ),
 
-                // QTY + DELETE
+                // ACTION
                 Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        _qtyButton(Icons.remove, () {
-                          if (item.quantity > 1) {
-                            cart.updateItem(item.id, item.quantity - 1);
-                          }
-                        }),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(
-                            '${item.quantity}',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ),
-                        _qtyButton(Icons.add, () {
-                          cart.updateItem(item.id, item.quantity + 1);
-                        }),
-                      ],
-                    ),
-
+                    // 🗑 DELETE PER ITEM
                     IconButton(
                       icon: const Icon(
                         Icons.delete_outline,
@@ -173,7 +156,10 @@ class _CartPageState extends State<CartPage> {
                             ),
                             actions: [
                               TextButton(
-                                onPressed: () => Navigator.pop(context),
+                                onPressed: () => Navigator.of(
+                                  context,
+                                  rootNavigator: true,
+                                ).pop(),
                                 child: const Text(
                                   "Batal",
                                   style: TextStyle(color: Colors.white),
@@ -181,14 +167,25 @@ class _CartPageState extends State<CartPage> {
                               ),
                               TextButton(
                                 onPressed: () async {
-                                  await cart.removeItem(item.id);
-                                  Navigator.pop(context);
+                                  final name = item.productName;
 
-                                  if (!mounted) return;
+                                  Navigator.of(
+                                    context,
+                                    rootNavigator: true,
+                                  ).pop();
+
+                                  await cart.removeItem(item.id);
+
+                                  if (!context.mounted) return;
+
+                                  await NotificationService.showNotification(
+                                    title: 'Keranjang',
+                                    body: '$name berhasil dihapus',
+                                  );
 
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text("Produk berhasil dihapus"),
+                                    SnackBar(
+                                      content: Text("$name berhasil dihapus"),
                                     ),
                                   );
                                 },
@@ -201,6 +198,27 @@ class _CartPageState extends State<CartPage> {
                           ),
                         );
                       },
+                    ),
+
+                    // QTY
+                    Row(
+                      children: [
+                        _qtyButton(Icons.remove, () {
+                          if (item.quantity > 1) {
+                            cart.updateItem(item.id, item.quantity - 1);
+                          }
+                        }),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(
+                            '${item.quantity}',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                        _qtyButton(Icons.add, () {
+                          cart.updateItem(item.id, item.quantity + 1);
+                        }),
+                      ],
                     ),
                   ],
                 ),
@@ -236,28 +254,24 @@ class _CartPageState extends State<CartPage> {
         color: AppColors.glass,
         border: Border(top: BorderSide(color: AppColors.glassBorder)),
       ),
-      child: Column(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text("Total", style: TextStyle(color: Colors.white)),
-              Text(
-                'Rp ${cart.totalPrice.toStringAsFixed(0)}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-            ],
+          const Text("Total", style: TextStyle(color: Colors.white)),
+          Text(
+            formatRupiah(cart.totalPrice),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
           ),
         ],
       ),
     );
   }
 
-  // CLEAR
+  // CLEAR CART
   void _showClearDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -274,12 +288,17 @@ class _CartPageState extends State<CartPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Batal", style: TextStyle(color: Colors.white),),
+            child: const Text("Batal", style: TextStyle(color: Colors.white)),
           ),
           TextButton(
-            onPressed: () {
-              context.read<CartProvider>().clearCart();
+            onPressed: () async {
+              await context.read<CartProvider>().clearCart();
               Navigator.pop(context);
+
+              await NotificationService.showNotification(
+                title: 'Keranjang',
+                body: 'Semua produk dihapus dari keranjang',
+              );
             },
             child: const Text("Hapus", style: TextStyle(color: Colors.red)),
           ),

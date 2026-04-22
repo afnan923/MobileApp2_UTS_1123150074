@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uts_1123150074/core/constants/app_colors.dart';
 import 'package:uts_1123150074/core/routes/app_router.dart';
+import 'package:uts_1123150074/core/services/notification_service.dart';
+import 'package:uts_1123150074/core/utils/currency_helper.dart';
 import 'package:uts_1123150074/features/auth/presentation/providers/auth_provider.dart';
 import 'package:uts_1123150074/features/dashboard/presentation/providers/product_provider.dart';
 import 'package:uts_1123150074/features/cart/presentation/providers/cart_provider.dart';
@@ -188,127 +190,133 @@ class _DashboardPageState extends State<DashboardPage> {
               padding: const EdgeInsets.all(16),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                childAspectRatio: 0.75,
+                childAspectRatio: 0.65,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
               ),
               itemCount: product.products.length,
+
               itemBuilder: (context, i) {
                 final p = product.products[i];
 
                 return Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // IMAGE
                       ClipRRect(
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(16),
                         ),
                         child: Image.network(
                           p.imageUrl,
-                          height: 120,
+                          height: 130,
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            height: 120,
-                            color: Colors.black26,
-                            child: const Icon(
-                              Icons.image_not_supported,
-                              size: 40,
-                              color: Colors.white,
-                            ),
-                          ),
                         ),
                       ),
 
-                      // CONTENT
-                      Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              p.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: Colors.white,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-
-                            const SizedBox(height: 4),
-
-                            Text(
-                              'Rp ${p.price.toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                color: Colors.yellow,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-
-                            const SizedBox(height: 4),
-
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.3),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                p.category,
+                      Expanded(
+                        flex: 6,
+                        child: Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 🔥 NAME (dibatasi)
+                              Text(
+                                p.name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
                                   color: Colors.white,
                                 ),
                               ),
-                            ),
 
-                            const SizedBox(height: 8),
+                              const SizedBox(height: 4),
 
-                            // 🛒 ADD TO CART BUTTON
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.orange,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 8,
+                              // 💰 PRICE
+                              Text(
+                                formatRupiah(p.price),
+                                style: const TextStyle(
+                                  color: Colors.yellow,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+
+                              const SizedBox(height: 4),
+
+                              // 🏷 CATEGORY (diperkecil)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.25),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  p.category,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.white,
                                   ),
                                 ),
-                                icon: const Icon(
-                                  Icons.add_shopping_cart,
-                                  size: 16,
-                                ),
-                                label: const Text("Keranjang"),
-                                onPressed: () async {
-                                  await context.read<CartProvider>().addToCart(
-                                    p.ID,
-                                    1,
-                                  );
-
-                                  if (!mounted) return;
-
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Berhasil ditambahkan ke keranjang',
-                                      ),
-                                    ),
-                                  );
-                                },
                               ),
-                            ),
-                          ],
+
+                              const Spacer(), 
+                              // 🛒 BUTTON (dipaksa di bawah)
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                    tapTargetSize: MaterialTapTargetSize
+                                        .shrinkWrap, // 🔥 penting
+                                  ),
+                                  icon: const Icon(
+                                    Icons.add_shopping_cart,
+                                    size: 16,
+                                  ),
+                                  label: const Text(
+                                    "Cart",
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                  onPressed: () async {
+                                    await context
+                                        .read<CartProvider>()
+                                        .addToCart(p.ID, 1);
+
+                                    await NotificationService.showNotification(
+                                      title: 'Keranjang',
+                                      body: '${p.name} berhasil ditambahkan',
+                                    );
+
+                                    if (!mounted) return;
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Berhasil ditambahkan ke Keranjang',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],

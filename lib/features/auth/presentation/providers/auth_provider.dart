@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:uts_1123150074/core/constants/api_constants.dart';
 import 'package:uts_1123150074/core/services/dio_client.dart';
+import 'package:uts_1123150074/core/services/notification_service.dart';
 import 'package:uts_1123150074/core/services/secure_storage.dart';
 
 enum AuthStatus {
@@ -96,7 +97,7 @@ class AuthProvider extends ChangeNotifier {
   // ─── Verifikasi ke Backend ───────────────────────────────
   Future<bool> _verifyTokenToBackend() async {
     try {
-      final firebaseToken = await _firebaseUser?.getIdToken();
+      final firebaseToken = await _firebaseUser?.getIdToken(true);
 
       final response = await DioClient.instance.post(
         ApiConstants.verifyToken,
@@ -109,6 +110,11 @@ class AuthProvider extends ChangeNotifier {
       await SecureStorageService.saveToken(_backendToken!);
 
       _status = AuthStatus.authenticated;
+
+      await NotificationService.showNotification(
+        title: 'Login Berhasil',
+        body: 'Selamat datang ${_firebaseUser?.displayName ?? ''}',
+      );
       notifyListeners();
       return true;
     } catch (e) {
@@ -179,15 +185,25 @@ class AuthProvider extends ChangeNotifier {
 
   // ─── Check Email Verified ────────────────────────────────
   Future<bool> checkEmailVerified() async {
-    await _firebaseUser?.reload();
-    _firebaseUser = _auth.currentUser;
+  final user = _auth.currentUser;
 
-    if (_firebaseUser?.emailVerified ?? false) {
-      return await _verifyTokenToBackend();
-    }
-    return false;
+  if (user == null) return false;
+
+  await user.reload();
+  await Future.delayed(const Duration(milliseconds: 500));
+  await user.reload();
+
+  final refreshedUser = _auth.currentUser;
+  _firebaseUser = refreshedUser;
+
+  final isVerified = refreshedUser?.emailVerified ?? false;
+
+  if (isVerified) {
+    return await _verifyTokenToBackend();
   }
 
+  return false;
+}
   // ─── Logout ──────────────────────────────────────────────
   Future<void> logout() async {
     await _auth.signOut();
@@ -197,6 +213,12 @@ class AuthProvider extends ChangeNotifier {
     _backendToken = null;
     _status = AuthStatus.unauthenticated;
 
+    await NotificationService.showNotification(
+      title: 'Logout',
+      body: 'Kamu telah keluar dari akun',
+    );
+
+    notifyListeners();
     notifyListeners();
   }
 
@@ -214,12 +236,12 @@ class AuthProvider extends ChangeNotifier {
   }
 
   String _mapFirebaseError(String code) => switch (code) {
-        'email-already-in-use' => 'Email sudah terdaftar.',
-        'user-not-found' => 'Akun tidak ditemukan.',
-        'wrong-password' => 'Password salah.',
-        'invalid-email' => 'Format email tidak valid.',
-        'weak-password' => 'Password terlalu lemah.',
-        'network-request-failed' => 'Tidak ada koneksi internet.',
-        _ => 'Terjadi kesalahan.',
-      };
+    'email-already-in-use' => 'Email sudah terdaftar.',
+    'user-not-found' => 'Akun tidak ditemukan.',
+    'wrong-password' => 'Password salah.',
+    'invalid-email' => 'Format email tidak valid.',
+    'weak-password' => 'Password terlalu lemah.',
+    'network-request-failed' => 'Tidak ada koneksi internet.',
+    _ => 'Terjadi kesalahan.',
+  };
 }
