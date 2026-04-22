@@ -185,25 +185,26 @@ class AuthProvider extends ChangeNotifier {
 
   // ─── Check Email Verified ────────────────────────────────
   Future<bool> checkEmailVerified() async {
-  final user = _auth.currentUser;
+    final user = _auth.currentUser;
 
-  if (user == null) return false;
+    if (user == null) return false;
 
-  await user.reload();
-  await Future.delayed(const Duration(milliseconds: 500));
-  await user.reload();
+    await user.reload();
+    await Future.delayed(const Duration(milliseconds: 500));
+    await user.reload();
 
-  final refreshedUser = _auth.currentUser;
-  _firebaseUser = refreshedUser;
+    final refreshedUser = _auth.currentUser;
+    _firebaseUser = refreshedUser;
 
-  final isVerified = refreshedUser?.emailVerified ?? false;
+    final isVerified = refreshedUser?.emailVerified ?? false;
 
-  if (isVerified) {
-    return await _verifyTokenToBackend();
+    if (isVerified) {
+      return await _verifyTokenToBackend();
+    }
+
+    return false;
   }
 
-  return false;
-}
   // ─── Logout ──────────────────────────────────────────────
   Future<void> logout() async {
     await _auth.signOut();
@@ -212,14 +213,11 @@ class AuthProvider extends ChangeNotifier {
     _firebaseUser = null;
     _backendToken = null;
     _status = AuthStatus.unauthenticated;
-
+    notifyListeners();
     await NotificationService.showNotification(
       title: 'Logout',
       body: 'Kamu telah keluar dari akun',
     );
-
-    notifyListeners();
-    notifyListeners();
   }
 
   // ─── Helpers ─────────────────────────────────────────────

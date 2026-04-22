@@ -11,6 +11,7 @@ import 'package:uts_1123150074/features/auth/presentation/widgets/custom_text_fi
 import 'package:uts_1123150074/features/auth/presentation/widgets/divider_with_text.dart';
 import 'package:uts_1123150074/features/auth/presentation/widgets/google_sign_in_button.dart';
 import 'package:uts_1123150074/features/auth/presentation/widgets/loading_overlay.dart';
+import 'package:uts_1123150074/features/cart/presentation/providers/cart_provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -61,8 +62,12 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ─── Handle Result jika berhasil verif email ke arah dashboard sedangkan gagal ke verifemail
-  void _handleLoginResult(bool ok, AuthProvider auth) {
+  void _handleLoginResult(bool ok, AuthProvider auth) async {
     if (ok) {
+      final cart = context.read<CartProvider>();
+
+      cart.clearLocalCart(); 
+      await cart.fetchCart();
       Navigator.pushReplacementNamed(context, AppRouter.dashboard);
     } else if (auth.status == AuthStatus.emailNotVerified) {
       Navigator.pushReplacementNamed(context, AppRouter.verifyEmail);

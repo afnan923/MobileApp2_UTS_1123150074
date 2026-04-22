@@ -35,6 +35,9 @@ class CartProvider extends ChangeNotifier {
 
     _isLoading = false;
     notifyListeners();
+
+    print("FETCH CART CALLED");
+    print("ITEMS LENGTH: ${_items.length}");
   }
 
   Future<void> addToCart(int productId, int qty) async {
@@ -48,18 +51,14 @@ class CartProvider extends ChangeNotifier {
   }
 
   Future<void> removeItem(int id) async {
-  try {
-    await repository.deleteItem(id);
-
-    await Future.delayed(const Duration(milliseconds: 100));
-
-    _items.removeWhere((item) => item.id == id);
-    notifyListeners();
-  } catch (e) {
-    _error = "Gagal hapus item";
-    notifyListeners();
+    try {
+      await repository.deleteItem(id);
+      await fetchCart(); // 🔥 INI KUNCI
+    } catch (e) {
+      _error = "Gagal hapus item";
+      notifyListeners();
+    }
   }
-}
 
   Future<void> clearCart() async {
     try {
@@ -72,9 +71,10 @@ class CartProvider extends ChangeNotifier {
     }
   }
 
-  void _setLoading() {
-    _isLoading = true;
+  void clearLocalCart() {
+    _items = [];
     _error = null;
+    _isLoading = false;
     notifyListeners();
   }
 }
