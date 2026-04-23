@@ -1,4 +1,4 @@
-# UTS Pemerograman Mobile Lanjutan
+# UTS Pemrogramman Mobile Lanjutan
 
 # Pengembang
  * Afnan Dani Alaudin
@@ -10,7 +10,7 @@
 
 # Aplikasi Paket Alat Pancing
 
-## Tect Stack
+## Tech Stack
 Aplikasi ini di rancang dengan :
 
 - [Flutter](https://docs.flutter.dev/get-started/learn-flutter) - Sebagai Front-End yg menerima respon dari beckend & Response User ke beckend
@@ -18,7 +18,7 @@ Aplikasi ini di rancang dengan :
 - [Golang-beckend](https://github.com/afnan923/MobileApp2_week5_1123150074) - sebagai backend API untuk menghubungkan Mysql ke Front-End
 - [Mysql](https://www.mysql.com/) - sebagai database local
 
-# Tampilan UI untuk APlikasi ini
+# Tampilan UI untuk Aplikasi ini
  * Tampilan halaman Login register,forgot password & email Verified
  <p align="center">
 <img width="200" src="https://github.com/user-attachments/assets/ccc3efc3-4159-4643-a3ba-93ea8e906774" />
