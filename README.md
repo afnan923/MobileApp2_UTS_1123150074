@@ -6,7 +6,7 @@
  * TI SE P1 23
  * Teknik Informatika
  * Software Engineering 
- * [Link-Youtube-presentation](https://www.youtube.com/watch?v=2rxonjeEbIY)
+ * [Link-Youtube-presentation](https://www.youtube.com/watch?v=EJeToa_EQYE)
 
 # Aplikasi Paket Alat Pancing
 
