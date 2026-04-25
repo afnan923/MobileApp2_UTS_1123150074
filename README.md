@@ -50,6 +50,13 @@ Aplikasi ini di rancang dengan :
   <p align="center">
 <img width="200" alt="WhatsApp Image 2026-04-22 at 23 08 34 (2)" src="https://github.com/user-attachments/assets/a8fc3c5d-2a82-4277-ae95-9b2a29716be4" />
 <img width="200" alt="WhatsApp Image 2026-04-22 at 23 08 34" src="https://github.com/user-attachments/assets/c5d9a1fa-25ba-4998-a6da-44e517fb66d1" />
+   
+ * Update Fitur Dark Mode di Dashboard dan Cart
+ <p align="center">
+ <img width="200" alt="Screenshot 2026-04-25 163315" src="https://github.com/user-attachments/assets/59a91dac-efb5-4489-870d-2215a404e8d7" />
+ <img width="200"  alt="Screenshot 2026-04-25 163334" src="https://github.com/user-attachments/assets/96eed128-3326-42a1-a338-bbb66f51fb6e" />
+
+
 
 </p>
 
@@ -104,7 +111,7 @@ lib/
 │   ├── dashboard/               # --- MODUL UTAMA/PRODUK ---
 │   │   ├── data/                # Model data produk (product_model)
 │   │   ├── domain/              # Repositori untuk manajemen produk
-│   │   └── presentation/        # Dashboard_page, splash_screen & product_provider
+│   │   └── presentation/        # Dashboard_page, splash_screen, product_provider & theme_provider
 │   │
 │   └── cart/                    # --- MODUL KERANJANG BELANJA ---
 │       ├── data/                # Remote datasource (API) & Implementation (cart_repository_impl)
