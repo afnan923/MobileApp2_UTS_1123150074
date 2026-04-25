@@ -10,6 +10,7 @@ import 'package:uts_1123150074/features/dashboard/presentation/providers/product
 import 'package:uts_1123150074/features/cart/presentation/providers/cart_provider.dart';
 import 'package:uts_1123150074/features/cart/data/repositories/cart_repository_impl.dart';
 import 'package:uts_1123150074/features/cart/data/datasources/cart_remote_datasource.dart';
+import 'package:uts_1123150074/features/dashboard/presentation/providers/theme_provider.dart';
 
 import 'firebase_options.dart';
 
@@ -23,6 +24,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider<CartProvider>(
@@ -43,7 +45,15 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Paket Alat Pancing',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
+      // 2. Daftarkan KEDUA tema
+      theme:     AppTheme.light,       // ← dipakai saat ThemeMode.light
+      darkTheme: AppTheme.dark,        // ← dipakai saat ThemeMode.dark
+
+
+      // 3. Tentukan mode aktif dari provider
+      themeMode: Provider.of<ThemeProvider>(context).themeMode,
+      //         ↑ berubah saat toggle() dipanggil → seluruh app ikut
+
       initialRoute: AppRouter.splash,
       routes: AppRouter.routes,
     );

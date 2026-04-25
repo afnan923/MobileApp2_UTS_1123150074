@@ -27,7 +27,7 @@ class CartProvider extends ChangeNotifier {
     try {
       final data = await repository.getCart();
 
-      _items = List<CartItemEntity>.from(data ?? []);
+      _items = List<CartItemEntity>.from(data);
     } catch (e) {
       _error = 'Gagal ambil cart';
       _items = [];

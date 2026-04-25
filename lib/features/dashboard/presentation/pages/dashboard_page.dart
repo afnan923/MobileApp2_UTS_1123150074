@@ -7,6 +7,7 @@ import 'package:uts_1123150074/core/utils/currency_helper.dart';
 import 'package:uts_1123150074/features/auth/presentation/providers/auth_provider.dart';
 import 'package:uts_1123150074/features/dashboard/presentation/providers/product_provider.dart';
 import 'package:uts_1123150074/features/cart/presentation/providers/cart_provider.dart';
+import 'package:uts_1123150074/features/dashboard/presentation/providers/theme_provider.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -57,13 +58,19 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final product = context.watch<ProductProvider>();
+    final themeProvider = context.watch<ThemeProvider>(); // ← baca + dengarkan
+    final isDark = themeProvider.isDark;
 
     final filtered = product.status == ProductStatus.loaded
         ? _filteredProducts(product.products)
         : [];
 
     return Container(
-      decoration: const BoxDecoration(gradient: AppColors.oceanGradient),
+      decoration: BoxDecoration(
+        gradient: isDark
+            ? AppColors.oceanGradientDark
+            : AppColors.oceanGradient,
+      ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
 
@@ -186,6 +193,37 @@ class _DashboardPageState extends State<DashboardPage> {
                   style: const TextStyle(color: Colors.white),
                 ),
               ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        isDark
+                            ? Icons.dark_mode
+                            : Icons.light_mode, // ← ikon berubah
+                        size: 20,
+                        color: isDark
+                            ? Colors.amber
+                            : Colors.grey.shade600, // ← warna berubah
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        isDark
+                            ? 'Mode Gelap'
+                            : 'Mode Terang', // ← label berubah
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                  Switch(
+                    value: isDark, // ← posisi switch
+                    onChanged: (_) => context
+                        .read<ThemeProvider>()
+                        .toggle(), // ← panggil toggle
+                  ),
+                ],
+              ),
 
               Expanded(
                 child: RefreshIndicator(
@@ -255,7 +293,6 @@ class _DashboardPageState extends State<DashboardPage> {
                                       width: double.infinity,
                                       child: ElevatedButton.icon(
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.orange,
                                           padding: const EdgeInsets.symmetric(
                                             vertical: 8,
                                           ),

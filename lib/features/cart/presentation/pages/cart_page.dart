@@ -5,6 +5,7 @@ import 'package:uts_1123150074/core/constants/app_strings.dart';
 import 'package:uts_1123150074/core/services/notification_service.dart';
 import 'package:uts_1123150074/core/utils/currency_helper.dart';
 import 'package:uts_1123150074/features/cart/presentation/providers/cart_provider.dart';
+import 'package:uts_1123150074/features/dashboard/presentation/providers/theme_provider.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -22,13 +23,20 @@ class _CartPageState extends State<CartPage> {
       context.read<CartProvider>().fetchCart();
     });
   }
+  
 
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
+    final themeProvider = context.watch<ThemeProvider>(); // ← baca + dengarkan
+    final isDark = themeProvider.isDark;
 
     return Container(
-      decoration: const BoxDecoration(gradient: AppColors.oceanGradient),
+      decoration: BoxDecoration(
+        gradient: isDark
+            ? AppColors.oceanGradientDark
+            : AppColors.oceanGradient,
+      ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
