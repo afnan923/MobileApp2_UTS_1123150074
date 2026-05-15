@@ -63,10 +63,12 @@ class CartItemModel {
 class CartModel {
   final List<CartItemModel> items;
   final double total;
+   final int itemCount;
 
   CartModel({
     required this.items,
     required this.total,
+    required this.itemCount,
   });
 
   factory CartModel.fromJson(Map<String, dynamic> json) {
@@ -80,9 +82,15 @@ class CartModel {
       (sum, item) => sum + item.subtotal,
     );
 
+     final itemCount = items.fold<int>(
+      0,
+      (sum, item) => sum + item.quantity,
+    );
+
     return CartModel(
       items: items,
       total: total,
+      itemCount: itemCount,
     );
   }
 }
