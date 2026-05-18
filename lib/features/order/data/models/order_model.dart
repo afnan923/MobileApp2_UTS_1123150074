@@ -50,6 +50,10 @@ class OrderModel {
   final String paymentMethod;
   // gopay | bank_transfer | virtual_account
 
+  // TAMBAHKAN INI
+  final String? gopayDeeplink;
+  final String? vaNumber;
+
   final List<OrderItemModel> items;
   final String createdAt;
 
@@ -60,6 +64,10 @@ class OrderModel {
     required this.shippingAddress,
     required this.notes,
     required this.paymentMethod,
+
+    // TAMBAHKAN
+    this.gopayDeeplink,
+    this.vaNumber,
     required this.items,
     required this.createdAt,
   });
@@ -79,6 +87,11 @@ class OrderModel {
       notes: json['notes'] as String? ?? '',
       paymentMethod:
           json['payment_method'] as String? ?? '',
+          // TAMBAHKAN
+      gopayDeeplink:
+          json['gopay_deeplink'] as String?,
+      vaNumber:
+          json['va_number'] as String?,
       items: items,
       createdAt: json['created_at'] as String? ?? '',
     );
@@ -92,6 +105,9 @@ class OrderModel {
       'shipping_address': shippingAddress,
       'notes': notes,
       'payment_method': paymentMethod,
+      // TAMBAHKAN
+      'gopay_deeplink': gopayDeeplink,
+      'va_number': vaNumber,
       'items': items.map((e) => e.toJson()).toList(),
       'created_at': createdAt,
     };

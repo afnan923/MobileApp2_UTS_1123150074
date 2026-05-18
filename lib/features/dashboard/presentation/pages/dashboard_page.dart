@@ -17,7 +17,6 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  // ✅ TAMBAHAN SAJA (TIDAK UBAH STRUKTUR)
   final TextEditingController _searchCtrl = TextEditingController();
   String _selectedCategory = 'All';
 
@@ -27,10 +26,11 @@ class _DashboardPageState extends State<DashboardPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProductProvider>().fetchProducts();
+      context.read<CartProvider>().fetchCart();
     });
   }
 
-  // ✅ FILTER FUNCTION (TAMBAHAN)
+  //  FILTER FUNCTION (TAMBAHAN)
   List _filteredProducts(List products) {
     final query = _searchCtrl.text.toLowerCase();
 
@@ -48,6 +48,84 @@ class _DashboardPageState extends State<DashboardPage> {
     }).toList();
   }
 
+  void _showProductDetail(BuildContext context, dynamic product) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: Color(0xFF1E1E1E),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.network(
+                  product.imageUrl,
+                  height: 220,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              Text(
+                product.name,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              Text(
+                formatRupiah(product.price),
+                style: const TextStyle(
+                  fontSize: 18,
+                  color: Colors.yellow,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.add_shopping_cart),
+                  label: const Text("Tambah ke Keranjang"),
+                  onPressed: () async {
+                    await context.read<CartProvider>().addToCart(product.ID, 1);
+
+                    if (!context.mounted) return;
+
+                    Navigator.pop(context);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${product.name} berhasil ditambahkan'),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _searchCtrl.dispose();
@@ -60,6 +138,7 @@ class _DashboardPageState extends State<DashboardPage> {
     final product = context.watch<ProductProvider>();
     final themeProvider = context.watch<ThemeProvider>(); // ← baca + dengarkan
     final isDark = themeProvider.isDark;
+    final cartCount = context.watch<CartProvider>().cart?.items.length ?? 0;
 
     final filtered = product.status == ProductStatus.loaded
         ? _filteredProducts(product.products)
@@ -95,10 +174,37 @@ class _DashboardPageState extends State<DashboardPage> {
           actions: [
             IconButton(
               tooltip: "Cart",
-              icon: const Icon(Icons.shopping_cart),
               onPressed: () {
                 Navigator.pushNamed(context, AppRouter.cart);
               },
+              icon: Stack(
+                children: [
+                  const Icon(Icons.shopping_cart),
+
+                  if (cartCount > 0)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        width: 16,
+                        height: 16,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$cartCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
 
             IconButton(
@@ -129,7 +235,6 @@ class _DashboardPageState extends State<DashboardPage> {
                         onPressed: () async {
                           Navigator.pop(context);
 
-                          
                           await context.read<AuthProvider>().logout();
 
                           if (!context.mounted) return;
@@ -243,100 +348,104 @@ class _DashboardPageState extends State<DashboardPage> {
                     itemBuilder: (context, i) {
                       final p = filtered[i];
 
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          children: [
-                            ClipRRect(
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(16),
-                              ),
-                              child: Image.network(
-                                p.imageUrl,
-                                height: 130,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(10),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      p.name,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-
-                                    const SizedBox(height: 4),
-
-                                    Text(
-                                      formatRupiah(p.price),
-                                      style: const TextStyle(
-                                        color: Colors.yellow,
-                                      ),
-                                    ),
-
-                                    const Spacer(),
-
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 8,
-                                          ),
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                        icon: const Icon(
-                                          Icons.add_shopping_cart,
-                                          size: 16,
-                                        ),
-                                        label: const Text(
-                                          "Cart",
-                                          style: TextStyle(fontSize: 12),
-                                        ),
-                                        onPressed: () async {
-                                          await context
-                                              .read<CartProvider>()
-                                              .addToCart(p.ID, 1);
-
-                                          await NotificationService.showNotification(
-                                            title: 'Keranjang',
-                                            body:
-                                                '${p.name} berhasil ditambahkan',
-                                          );
-
-                                          if (!mounted) return;
-
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                '${p.name} berhasil ditambahkan',
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ],
+                      return GestureDetector(
+                        onTap: () => _showProductDetail(context, p),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            children: [
+                              ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(16),
+                                ),
+                                child: Image.network(
+                                  p.imageUrl,
+                                  height: 130,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
                                 ),
                               ),
-                            ),
-                          ],
+
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        p.name,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 4),
+
+                                      Text(
+                                        formatRupiah(p.price),
+                                        style: const TextStyle(
+                                          color: Colors.yellow,
+                                        ),
+                                      ),
+
+                                      const Spacer(),
+
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton.icon(
+                                          style: ElevatedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 8,
+                                            ),
+                                            tapTargetSize: MaterialTapTargetSize
+                                                .shrinkWrap,
+                                          ),
+                                          icon: const Icon(
+                                            Icons.add_shopping_cart,
+                                            size: 16,
+                                          ),
+                                          label: const Text(
+                                            "Cart",
+                                            style: TextStyle(fontSize: 12),
+                                          ),
+                                          onPressed: () async {
+                                            await context
+                                                .read<CartProvider>()
+                                                .addToCart(p.ID, 1);
+
+                                            await NotificationService.showNotification(
+                                              title: 'Keranjang',
+                                              body:
+                                                  '${p.name} berhasil ditambahkan',
+                                            );
+
+                                            if (!mounted) return;
+
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  '${p.name} berhasil ditambahkan',
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
