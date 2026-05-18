@@ -129,7 +129,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         onPressed: () async {
                           Navigator.pop(context);
 
-                          context.read<CartProvider>().clearLocalCart();
+                          
                           await context.read<AuthProvider>().logout();
 
                           if (!context.mounted) return;

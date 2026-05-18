@@ -71,7 +71,6 @@ class _LoginPageState extends State<LoginPage> {
     if (ok) {
       final cart = context.read<CartProvider>();
 
-      cart.clearLocalCart();
       await cart.fetchCart();
       Navigator.pushReplacementNamed(context, AppRouter.dashboard);
     } else if (auth.status == AuthStatus.emailNotVerified) {

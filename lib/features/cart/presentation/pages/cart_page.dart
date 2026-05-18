@@ -202,7 +202,7 @@ class _CartPageState extends State<CartPage> {
                 total: cart.total,
                 formatPrice: _formatPrice,
                 onCheckout: () {
-                  Navigator.pushNamed(context, AppRouter.);
+                  Navigator.pushNamed(context, AppRouter.checkout);
                 },
                 isDark: isDark,
               ),

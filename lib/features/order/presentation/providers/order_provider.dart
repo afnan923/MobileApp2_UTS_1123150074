@@ -8,13 +8,19 @@ enum OrderStatus { initial, loading, success, error }
 class OrderProvider extends ChangeNotifier {
   final OrderRepository _repository = OrderRepositoryImpl();
 
+  // STATUS
   OrderStatus _checkoutStatus = OrderStatus.initial;
+  OrderStatus _orderStatus = OrderStatus.initial;
+
+  // DATA
   OrderModel? _lastOrder;
   List<OrderModel> _orders = [];
   String? _error;
 
   // GETTER
   OrderStatus get checkoutStatus => _checkoutStatus;
+  OrderStatus get orderStatus => _orderStatus;
+
   OrderModel? get lastOrder => _lastOrder;
   List<OrderModel> get orders => _orders;
   String? get error => _error;
@@ -56,5 +62,24 @@ class OrderProvider extends ChangeNotifier {
       _setError(e.toString());
       return false;
     }
+  }
+
+  // FETCH MY ORDERS
+  Future<void> fetchMyOrders() async {
+    _orderStatus = OrderStatus.loading;
+    _error = null;
+
+    notifyListeners();
+
+    try {
+      _orders = await _repository.getMyOrders();
+
+      _orderStatus = OrderStatus.success;
+    } catch (e) {
+      _error = e.toString();
+      _orderStatus = OrderStatus.error;
+    }
+
+    notifyListeners();
   }
 }
