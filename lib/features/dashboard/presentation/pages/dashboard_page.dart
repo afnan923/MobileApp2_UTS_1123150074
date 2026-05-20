@@ -208,6 +208,14 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
 
             IconButton(
+              tooltip: "Order Saya",
+              onPressed: () {
+                Navigator.pushNamed(context, AppRouter.myOrders);
+              },
+              icon: const Icon(Icons.receipt_long),
+            ),
+
+            IconButton(
               tooltip: "Logout",
               icon: const Icon(Icons.logout),
               onPressed: () {
