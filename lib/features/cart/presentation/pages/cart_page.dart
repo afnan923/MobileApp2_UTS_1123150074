@@ -175,22 +175,22 @@ class _CartPageState extends State<CartPage> {
                     itemCount: cart.items.length,
                     separatorBuilder: (context, index) =>
                         const SizedBox(height: 12),
-                    itemBuilder: (ctx, i) => _CartItemCard(
+                      itemBuilder: (ctx, i) => _CartItemCard(
                       item: cart.items[i],
                       formatPrice: _formatPrice,
                       isDark: isDark,
-                      onRemove: () => cartProv.removeItem(cart.items[i].product.id),
+                      onRemove: () => cartProv.removeItem(cart.items[i].id),
                       onDecrease: () {
                         final qty = cart.items[i].quantity - 1;
 
                         if (qty <= 0) {
-                          cartProv.removeItem(cart.items[i].product.id);
+                          cartProv.removeItem(cart.items[i].id);
                         } else {
-                          cartProv.updateItem(cart.items[i].product.id, qty);
+                          cartProv.updateItem(cart.items[i].id, qty);
                         }
                       },
                       onIncrease: () => cartProv.updateItem(
-                        cart.items[i].product.id,
+                        cart.items[i].id,
                         cart.items[i].quantity + 1,
                       ),
                     ),

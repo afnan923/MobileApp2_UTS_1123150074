@@ -26,17 +26,20 @@ class CartProductModel {
 }
 
 class CartItemModel {
+  final int id; // cart item id on server
   final CartProductModel product;
   final int quantity;
   final double subtotal;
 
   CartItemModel({
+    required this.id,
     required this.product,
     required this.quantity,
     required this.subtotal,
   });
 
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
+    final id = json['id'] as int? ?? json['ID'] as int? ?? json['cart_item_id'] as int? ?? 0;
     final product = CartProductModel.fromJson(
       json['product'] as Map<String, dynamic>? ?? {},
     );
@@ -53,6 +56,7 @@ class CartItemModel {
         apiSubtotal > 0 ? apiSubtotal : product.price * quantity;
 
     return CartItemModel(
+      id: id,
       product: product,
       quantity: quantity,
       subtotal: subtotal,
