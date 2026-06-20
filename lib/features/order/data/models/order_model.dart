@@ -78,7 +78,11 @@ class OrderModel {
         .toList();
 
     return OrderModel(
-      id: json['id'] as int? ?? 0,
+      id: int.tryParse(json['ID']?.toString() ?? '') ??
+          int.tryParse(json['id']?.toString() ?? '') ??
+          int.tryParse(json['order_id']?.toString() ?? '') ??
+          int.tryParse(json['_id']?.toString() ?? '') ??
+          0,
       totalAmount:
           (json['total_amount'] as num?)?.toDouble() ?? 0.0,
       status: json['status'] as String? ?? 'pending',
@@ -93,7 +97,7 @@ class OrderModel {
       vaNumber:
           json['va_number'] as String?,
       items: items,
-      createdAt: json['created_at'] as String? ?? '',
+      createdAt: json['CreatedAt'] as String? ?? json['created_at'] as String? ?? '',
     );
   }
 

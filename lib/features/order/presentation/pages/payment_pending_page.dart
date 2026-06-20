@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uts_1123150074/core/routes/app_router.dart';
+import 'package:uts_1123150074/core/services/global_institute_pay_service.dart';
 import 'package:uts_1123150074/features/order/data/models/order_model.dart';
 import 'package:uts_1123150074/features/order/presentation/providers/order_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+void _log(String msg) => debugPrint('[PasarMalam/PaymentPending] $msg');
 
 class PaymentPendingPage extends StatefulWidget {
   final OrderModel order;
@@ -17,55 +22,148 @@ class PaymentPendingPage extends StatefulWidget {
 
 class _PaymentPendingPageState extends State<PaymentPendingPage>
     with WidgetsBindingObserver {
-  bool _gopayLaunched = false;
+  bool _payLaunched = false;
+  bool _navigating = false; // cegah navigasi ganda
+  StreamSubscription<PaymentCallbackData>? _callbackSub;
+  late OrderProvider _orderProvider;
 
   @override
   void initState() {
     super.initState();
+    _orderProvider = context.read<OrderProvider>();
+    _log('─────────────────────────────────────────');
+    _log(
+      'initState | orderId=${widget.order.id} '
+      'paymentMethod=${widget.order.paymentMethod} '
+      'amount=${widget.order.totalAmount}',
+    );
+
     WidgetsBinding.instance.addObserver(this);
 
-    // Untuk GoPay: otomatis buka deeplink saat halaman pertama dimuat
-    if (widget.order.paymentMethod == 'gopay') {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _launchGopay());
+    _log(
+      'ℹ Auto-launch dinonaktifkan — user harus menekan tombol '
+      '"Buka Nan Emoney" secara manual (method=${widget.order.paymentMethod})',
+    );
+
+    _log('⏱ Memulai polling backend (orderId=${widget.order.id})');
+    context.read<OrderProvider>().startPaymentPolling(widget.order.id);
+
+    // Periksa callback yang masuk saat cold start
+    final pending = GlobalInstitutePayService().consumePendingCallback();
+    if (pending != null) {
+      _log(' Cold-start callback ditemukan: $pending');
+      if (pending.isSuccess) {
+        _log(' Cold-start callback sukses → navigasi ke OrderSuccess');
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _onPaymentSuccess(),
+        );
+      } else {
+        _log(' Cold-start callback gagal (status=${pending.status})');
+      }
+    } else {
+      _log('ℹ Tidak ada pending cold-start callback');
     }
 
-    // Mulai polling otomatis untuk kedua metode
-    final orderProv = context.read<OrderProvider>();
-    orderProv.startPaymentPolling(widget.order.id);
+    // Subscribe stream callback (app berjalan di background/foreground)
+    _log(' Subscribe GlobalInstitutePayService.onCallback stream...');
+    _callbackSub = GlobalInstitutePayService().onCallback.listen((data) {
+      _log(' Callback diterima dari stream: $data');
+      if (!mounted || _navigating) {
+        _log('Widget sudah di-dispose atau sedang navigasi, callback diabaikan');
+        return;
+      }
+      if (data.isSuccess) {
+        _log(' Status sukses → jadwalkan navigasi ke OrderSuccess');
+        // Gunakan addPostFrameCallback agar tidak navigasi di tengah build
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_navigating) _onPaymentSuccess();
+        });
+      } else {
+        _log(' Status gagal (status=${data.status}) → tampil snackbar');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Pembayaran gagal atau dibatalkan (status: ${data.status})',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
+    _log('initState selesai.');
   }
 
   @override
   void dispose() {
+    _log('dispose | orderId=${widget.order.id}');
+    _callbackSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
-    context.read<OrderProvider>().stopPaymentPolling();
+    _orderProvider.stopPaymentPolling();
     super.dispose();
   }
 
-  /// Dipanggil setiap kali app kembali ke foreground (setelah dari GoPay)
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _gopayLaunched) {
-      // Cek status sekali saat balik dari GoPay
+    _log('AppLifecycle: $state | _payLaunched=$_payLaunched');
+    if (state == AppLifecycleState.resumed && _payLaunched) {
+      _log(
+        ' Resumed setelah launch → cek status sekali (orderId=${widget.order.id})',
+      );
       context.read<OrderProvider>().checkPaymentStatus(widget.order.id);
     }
   }
 
-  Future<void> _launchGopay() async {
-    final deeplink = widget.order.gopayDeeplink;
-    if (deeplink == null || deeplink.isEmpty) return;
+  Future<void> _launchGlobalInstitutePay() async {
+    _log('─── _launchGlobalInstitutePay ───');
+    _log(
+      'orderId=${widget.order.id} | amount=${widget.order.totalAmount} '
+      '| notes="${widget.order.notes}"',
+    );
 
-    final uri = Uri.parse(deeplink);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-      setState(() => _gopayLaunched = true);
-    } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Aplikasi GoPay tidak ditemukan di perangkat ini'),
-          backgroundColor: Colors.red,
-        ),
+    final notes = widget.order.notes.isNotEmpty ? widget.order.notes : null;
+
+    // Build URL — detail parameter sudah dilog di dalam service
+    final deeplinkUrl = GlobalInstitutePayService.buildDeeplinkUrl(
+      orderId: widget.order.id,
+      amount: widget.order.totalAmount,
+      description: notes,
+    );
+
+    final uri = Uri.parse(deeplinkUrl);
+    _log(' URI yang akan diluncurkan: $uri');
+
+    // canLaunchUrl hanya untuk diagnosis — bukan penjaga keras.
+    // Bisa false-negatif jika APK belum di-rebuild setelah perubahan manifest.
+    _log(' Mengecek canLaunchUrl (diagnosis saja)...');
+    final canLaunch = await canLaunchUrl(uri);
+    _log('canLaunchUrl → $canLaunch');
+    if (!canLaunch) {
+      _log('canLaunchUrl=false — tetap mencoba launchUrl langsung...');
+      _log('Kemungkinan penyebab false-negatif:');
+      _log('1. APK belum di-rebuild setelah perubahan AndroidManifest.xml');
+      _log('2. Aplikasi Dompet Kampus Global belum terinstal di perangkat ini');
+    }
+
+    _log(' Memanggil launchUrl (mode=externalApplication)...');
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
       );
+      _log('launchUrl → $launched');
+      if (launched) {
+        _log(' Dompet Kampus Global berhasil dibuka');
+        setState(() => _payLaunched = true);
+      } else {
+        _log('launchUrl=false — aplikasi ada tapi tidak merespons');
+        if (!mounted) return;
+        _showAppNotFoundDialog();
+      }
+    } catch (e) {
+      _log(' Exception launchUrl: $e');
+      _log('→ Aplikasi Dompet Kampus Global kemungkinan tidak terinstal');
+      if (!mounted) return;
+      _showAppNotFoundDialog();
     }
   }
 
@@ -82,12 +180,56 @@ class _PaymentPendingPageState extends State<PaymentPendingPage>
   }
 
   void _onPaymentSuccess() {
+    if (_navigating) return; // guard: cegah panggil ganda
+    _navigating = true;
+    _log(' _onPaymentSuccess dipanggil — hentikan polling & navigasi');
     context.read<OrderProvider>().stopPaymentPolling();
+    // Hapus seluruh stack lalu push orderSuccess,
+    // sehingga tombol "Kembali ke Beranda" di OrderSuccessPage
+    // akan kembali ke dashboard (bukan login).
     Navigator.pushNamedAndRemoveUntil(
       context,
       AppRouter.orderSuccess,
-      (route) => route.settings.name == AppRouter.dashboard,
+      (route) => false, // bersihkan semua route di stack
       arguments: context.read<OrderProvider>().lastOrder ?? widget.order,
+    );
+  }
+
+  void _showAppNotFoundDialog() {
+    _log(' Menampilkan dialog: aplikasi tidak ditemukan');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Aplikasi Tidak Ditemukan'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Aplikasi Dompet Kampus Global tidak terinstal di perangkat ini.',
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Pesanan Anda tetap tersimpan. Lakukan pembayaran melalui aplikasi '
+              'Dompet Kampus Global, lalu kembali untuk mengecek status.',
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Mengerti'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<OrderProvider>().checkPaymentStatus(widget.order.id);
+            },
+            child: const Text('Cek Status Sekarang'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -124,12 +266,12 @@ class _PaymentPendingPageState extends State<PaymentPendingPage>
                 onCheckStatus: () =>
                     context.read<OrderProvider>().checkPaymentStatus(order.id),
               )
-            : _GopayBody(
+            : _GlobalInstitutePayBody(
                 order: order,
                 payStatus: payStatus,
                 formatPrice: _formatPrice,
-                gopayLaunched: _gopayLaunched,
-                onOpenGopay: _launchGopay,
+                payLaunched: _payLaunched,
+                onOpenApp: _launchGlobalInstitutePay,
                 onCheckStatus: () =>
                     context.read<OrderProvider>().checkPaymentStatus(order.id),
               ),
@@ -179,6 +321,7 @@ class _VirtualAccountBody extends StatelessWidget {
   final PaymentCheckStatus payStatus;
   final String Function(double) formatPrice;
   final VoidCallback onCheckStatus;
+
   const _VirtualAccountBody({
     required this.order,
     required this.payStatus,
@@ -430,31 +573,34 @@ class _BankStepTile extends StatelessWidget {
 }
 
 // ──────────────────────────────────────────────────────────────
-// GoPay Body
+// Global Institute Pay Body
 // ──────────────────────────────────────────────────────────────
 
-class _GopayBody extends StatelessWidget {
+class _GlobalInstitutePayBody extends StatelessWidget {
   final OrderModel order;
   final PaymentCheckStatus payStatus;
   final String Function(double) formatPrice;
-  final bool gopayLaunched;
-  final VoidCallback onOpenGopay;
+  final bool payLaunched;
+  final VoidCallback onOpenApp;
   final VoidCallback onCheckStatus;
 
-  const _GopayBody({
+  const _GlobalInstitutePayBody({
     required this.order,
     required this.payStatus,
     required this.formatPrice,
-    required this.gopayLaunched,
-    required this.onOpenGopay,
+    required this.payLaunched,
+    required this.onOpenApp,
     required this.onCheckStatus,
   });
+
+  static const _brandColor = Color(0xFF1A237E);
 
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     final surface = Theme.of(context).colorScheme.surface;
     final onSurface = Theme.of(context).colorScheme.onSurface;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -465,19 +611,20 @@ class _GopayBody extends StatelessWidget {
           Container(
             width: 90,
             height: 90,
-            decoration: BoxDecoration(
-              color: const Color(0xFF00ADB5).withValues(alpha: 0.1),
+            decoration: const BoxDecoration(
+              color: Color(0x1A1A237E),
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              Icons.account_balance_wallet,
+              Icons.school_rounded,
               size: 46,
-              color: Color(0xFF00ADB5),
+              color: _brandColor,
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            'Bayar dengan GoPay',
+            'Bayar dengan Nan Emoney Pay',
+            textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
               color: onSurface,
@@ -493,9 +640,41 @@ class _GopayBody extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 28),
+          const SizedBox(height: 20),
 
-          // ── Info card ────────────────────────────────────────
+          // ── Info keamanan ────────────────────────────────────
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: _brandColor.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _brandColor.withValues(alpha: 0.2)),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.verified_user_rounded,
+                  color: _brandColor,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Pembayaran akan diverifikasi dengan PIN dan kode 2FA di aplikasi Nan Emoney',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _brandColor.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // ── Langkah pembayaran ───────────────────────────────
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -515,22 +694,23 @@ class _GopayBody extends StatelessWidget {
               children: [
                 _StepItem(
                   number: '1',
-                  text: gopayLaunched
-                      ? 'Aplikasi GoPay sudah dibuka'
-                      : 'Kamu akan diarahkan ke aplikasi GoPay',
-                  done: gopayLaunched,
+                  text: payLaunched
+                      ? 'Aplikasi Nan Emoney sudah dibuka'
+                      : 'Kamu akan diarahkan ke Nan Emoney',
+                  done: payLaunched,
                 ),
                 const SizedBox(height: 14),
                 _StepItem(
                   number: '2',
                   text:
-                      'Konfirmasi pembayaran ${formatPrice(order.totalAmount)} di GoPay',
+                      'Masukkan PIN dan kode verifikasi 2FA, lalu konfirmasi pembayaran ${formatPrice(order.totalAmount)}',
                   done: false,
                 ),
                 const SizedBox(height: 14),
                 _StepItem(
                   number: '3',
-                  text: 'Kembali ke aplikasi — status otomatis diperbarui',
+                  text:
+                      'Kembali ke aplikasi — status diperbarui otomatis via callback atau polling',
                   done: false,
                 ),
               ],
@@ -539,12 +719,12 @@ class _GopayBody extends StatelessWidget {
 
           const SizedBox(height: 28),
 
-          // ── Tombol buka GoPay ───────────────────────────────
+          // ── Tombol buka Dompet Kampus Global ─────────────────
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00ADB5),
+                backgroundColor: _brandColor,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -553,26 +733,28 @@ class _GopayBody extends StatelessWidget {
               ),
               icon: const Icon(Icons.open_in_new),
               label: Text(
-                gopayLaunched ? 'Buka Kembali GoPay' : 'Buka GoPay',
+                payLaunched
+                    ? 'Buka Kembali Nan Emoney'
+                    : 'Buka Nan Emoney',
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              onPressed: onOpenGopay,
+              onPressed: onOpenApp,
             ),
           ),
 
           const SizedBox(height: 12),
 
-          // ── Cek Status Manual ───────────────────────────────
+          // ── Cek Status Manual ────────────────────────────────
           _CheckStatusButton(payStatus: payStatus, onPressed: onCheckStatus),
 
           const SizedBox(height: 16),
 
-          if (payStatus == PaymentCheckStatus.idle && gopayLaunched)
+          if (payStatus == PaymentCheckStatus.idle && payLaunched)
             Text(
-              'Sedang menunggu konfirmasi pembayaran dari GoPay...',
+              'Menunggu konfirmasi pembayaran dari Nan Emoney...',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
@@ -591,6 +773,7 @@ class _StepItem extends StatelessWidget {
   final String number;
   final String text;
   final bool done;
+
   const _StepItem({
     required this.number,
     required this.text,

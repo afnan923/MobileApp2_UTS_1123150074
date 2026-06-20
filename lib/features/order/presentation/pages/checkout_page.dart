@@ -20,11 +20,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   static const List<_PaymentOption> _paymentOptions = [
     _PaymentOption(
-      value: 'gopay',
-      label: 'GoPay',
-      subtitle: 'Bayar instant dengan GoPay',
-      icon: Icons.account_balance_wallet,
-      iconColor: Color(0xFF00ADB5),
+      value: 'global_institute_pay', // ← Nilai dikirim ke backend
+      label: 'Nan Emoney Pay', // ← Label tampilan
+      subtitle: 'Bayar via Nan Emoney',
+      icon: Icons.school_rounded, // ← Ikon kampus
+      iconColor: Color(0xFF1A237E), // ← Biru tua akademis
     ),
     _PaymentOption(
       value: 'bank_transfer',
@@ -97,9 +97,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
       if (!context.mounted) return;
 
       final order = orderProv.lastOrder!;
+      // SESUDAH
       final needsPaymentFlow =
           order.paymentMethod == 'virtual_account' ||
-          order.paymentMethod == 'gopay';
+          order.paymentMethod ==
+              'global_institute_pay'; // ← Global Institute Pay
 
       if (needsPaymentFlow) {
         // VA & GoPay: tampilkan halaman proses pembayaran
