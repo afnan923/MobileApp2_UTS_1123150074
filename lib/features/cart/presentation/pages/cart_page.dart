@@ -175,7 +175,7 @@ class _CartPageState extends State<CartPage> {
                     itemCount: cart.items.length,
                     separatorBuilder: (context, index) =>
                         const SizedBox(height: 12),
-                      itemBuilder: (ctx, i) => _CartItemCard(
+                    itemBuilder: (ctx, i) => _CartItemCard(
                       item: cart.items[i],
                       formatPrice: _formatPrice,
                       isDark: isDark,

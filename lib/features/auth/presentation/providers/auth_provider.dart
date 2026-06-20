@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -5,6 +7,8 @@ import 'package:uts_1123150074/core/constants/api_constants.dart';
 import 'package:uts_1123150074/core/services/dio_client.dart';
 import 'package:uts_1123150074/core/services/notification_service.dart';
 import 'package:uts_1123150074/core/services/secure_storage.dart';
+
+void _log(String msg) => debugPrint('[AuthProvider] $msg');
 
 enum AuthStatus {
   initial,
@@ -18,6 +22,7 @@ enum AuthStatus {
 class AuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn googleSignIn = GoogleSignIn();
+  StreamSubscription<User?>? _authStateSub;
 
   // ─── State ───────────────────────────────────────────────
   AuthStatus _status = AuthStatus.initial;
@@ -28,6 +33,50 @@ class AuthProvider extends ChangeNotifier {
   // Tambahan (FIX BUG)
   String? _tempEmail;
   String? _tempPassword;
+
+  AuthProvider() {
+    // Langsung subscribe ke authStateChanges agar status selalu sinkron
+    // dengan Firebase, bahkan saat cold start / resume dari app lain.
+    _authStateSub = _auth.authStateChanges().listen(_onFirebaseAuthStateChanged);
+  }
+
+  Future<void> _onFirebaseAuthStateChanged(User? user) async {
+    _log('authStateChanges: user=${user?.email} (uid=${user?.uid})');
+    if (user != null) {
+      // Firebase sudah restore sesi, cek backend token
+      final token = await SecureStorageService.getToken();
+      _log('token dari storage: ${token != null ? "ada" : "null"}');
+      if (token != null) {
+        _firebaseUser = user;
+        _backendToken = token;
+        // Jangan overwrite status jika sedang proses login/register
+        if (_status == AuthStatus.initial || _status == AuthStatus.unauthenticated) {
+          _status = AuthStatus.authenticated;
+          _log('Status → authenticated (restore dari Firebase stream)');
+        }
+      } else {
+        // Firebase punya user tapi tidak ada backend token
+        if (_status == AuthStatus.initial) {
+          _status = AuthStatus.unauthenticated;
+          _log('Status → unauthenticated (tidak ada backend token)');
+        }
+      }
+    } else {
+      // Firebase tidak punya user (belum login / sudah logout)
+      if (_status != AuthStatus.loading &&
+          _status != AuthStatus.emailNotVerified) {
+        _status = AuthStatus.unauthenticated;
+        _log('Status → unauthenticated (Firebase user null)');
+      }
+    }
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _authStateSub?.cancel();
+    super.dispose();
+  }
 
   // ─── Getters ─────────────────────────────────────────────
   AuthStatus get status => _status;
@@ -218,6 +267,31 @@ class AuthProvider extends ChangeNotifier {
       title: 'Logout',
       body: 'Kamu telah keluar dari akun',
     );
+  }
+  /// Dipanggil dari SplashPage untuk menunggu Firebase
+  /// selesai restore sesi. Karena sudah ada listener stream
+  /// di constructor, cukup tunggu sampai status tidak lagi initial.
+  Future<void> restoreSession() async {
+    _log('restoreSession() dipanggil, status saat ini: $_status');
+    if (_status != AuthStatus.initial) {
+      _log('Status sudah final ($_status), tidak perlu tunggu');
+      return;
+    }
+    // Tunggu sampai Firebase emits event pertama (stream listener di constructor)
+    try {
+      await _auth
+          .authStateChanges()
+          .first
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // Timeout — set unauthenticated jika masih initial
+      if (_status == AuthStatus.initial) {
+        _status = AuthStatus.unauthenticated;
+        _log('Timeout restoreSession → unauthenticated');
+        notifyListeners();
+      }
+    }
+    _log('restoreSession() selesai, status: $_status');
   }
 
   // ─── Helpers ─────────────────────────────────────────────

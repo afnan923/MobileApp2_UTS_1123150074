@@ -39,7 +39,11 @@ class CartItemModel {
   });
 
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
-    final id = json['id'] as int? ?? json['ID'] as int? ?? json['cart_item_id'] as int? ?? 0;
+    final id =
+        json['id'] as int? ??
+        json['ID'] as int? ??
+        json['cart_item_id'] as int? ??
+        0;
     final product = CartProductModel.fromJson(
       json['product'] as Map<String, dynamic>? ?? {},
     );
@@ -49,11 +53,9 @@ class CartItemModel {
     // Prioritas:
     // 1. pakai subtotal dari API jika ada
     // 2. fallback hitung sendiri
-    final apiSubtotal =
-        (json['subtotal'] as num?)?.toDouble() ?? 0.0;
+    final apiSubtotal = (json['subtotal'] as num?)?.toDouble() ?? 0.0;
 
-    final subtotal =
-        apiSubtotal > 0 ? apiSubtotal : product.price * quantity;
+    final subtotal = apiSubtotal > 0 ? apiSubtotal : product.price * quantity;
 
     return CartItemModel(
       id: id,
@@ -67,7 +69,7 @@ class CartItemModel {
 class CartModel {
   final List<CartItemModel> items;
   final double total;
-   final int itemCount;
+  final int itemCount;
 
   CartModel({
     required this.items,
@@ -81,20 +83,10 @@ class CartModel {
         .toList();
 
     // Selalu hitung total dari semua subtotal item
-    final total = items.fold<double>(
-      0.0,
-      (sum, item) => sum + item.subtotal,
-    );
+    final total = items.fold<double>(0.0, (sum, item) => sum + item.subtotal);
 
-     final itemCount = items.fold<int>(
-      0,
-      (sum, item) => sum + item.quantity,
-    );
+    final itemCount = items.fold<int>(0, (sum, item) => sum + item.quantity);
 
-    return CartModel(
-      items: items,
-      total: total,
-      itemCount: itemCount,
-    );
+    return CartModel(items: items, total: total, itemCount: itemCount);
   }
 }

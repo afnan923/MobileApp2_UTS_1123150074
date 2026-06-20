@@ -22,6 +22,7 @@ class OrderRepositoryImpl implements OrderRepository {
     );
 
     final data = response.data['data'];
+    print('Checkout API Response Data: $data');
 
     if (data == null) {
       throw Exception('Checkout gagal: data kosong');

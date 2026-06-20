@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart' as fb;
 import 'package:uts_1123150074/core/routes/app_router.dart';
+import 'package:uts_1123150074/core/services/global_institute_pay_service.dart';
 import 'package:uts_1123150074/core/services/notification_service.dart';
 import 'package:uts_1123150074/core/theme/app_theme.dart';
 import 'package:uts_1123150074/features/auth/presentation/providers/auth_provider.dart';
@@ -20,6 +21,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await NotificationService.init();
+  await GlobalInstitutePayService().init();  // ← BARU: harus sebelum runApp()
   runApp(
     MultiProvider(
       providers: [
