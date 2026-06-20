@@ -1,34 +1,40 @@
-import '../../domain/entities/cart_entity.dart';
-import '../../domain/repositories/cart_repository.dart';
-import '../datasources/cart_remote_datasource.dart';
+// lib/features/cart/data/repositories/cart_repository_impl.dart
+import 'package:uts_1123150074/core/constants/api_constants.dart';
+import 'package:uts_1123150074/core/services/dio_client.dart';
+import 'package:uts_1123150074/features/cart/data/models/cart_model.dart';
+import 'package:uts_1123150074/features/cart/domain/repositories/cart_repository.dart';
 
 class CartRepositoryImpl implements CartRepository {
-  final CartRemoteDataSource remote;
-
-  CartRepositoryImpl(this.remote);
-
   @override
-  Future<List<CartItemEntity>> getCart() async {
-    return await remote.getCart();
+  Future<CartModel> getCart() async {
+    final response = await DioClient.instance.get(ApiConstants.cart);
+    final data = response.data['data'] as Map<String, dynamic>;
+    return CartModel.fromJson(data);
   }
 
   @override
-  Future<void> addToCart(int productId, int quantity) {
-    return remote.addToCart(productId, quantity);
+  Future<void> addToCart(int productId, int quantity) async {
+    await DioClient.instance.post(
+      ApiConstants.cart,
+      data: {'product_id': productId, 'quantity': quantity},
+    );
   }
 
   @override
-  Future<void> updateCart(int id, int quantity) {
-    return remote.updateCart(id, quantity);
+  Future<void> updateCartItem(int cartItemId, int quantity) async {
+    await DioClient.instance.put(
+      '${ApiConstants.cart}/$cartItemId', // /v1/cart/1
+      data: {'quantity': quantity},
+    );
   }
 
   @override
-  Future<void> deleteItem(int id) {
-    return remote.deleteItem(id);
+  Future<void> removeCartItem(int cartItemId) async {
+    await DioClient.instance.delete('${ApiConstants.cart}/$cartItemId');
   }
 
   @override
-  Future<void> clearCart() {
-    return remote.clearCart();
+  Future<void> clearCart() async {
+    await DioClient.instance.delete(ApiConstants.cart);
   }
 }

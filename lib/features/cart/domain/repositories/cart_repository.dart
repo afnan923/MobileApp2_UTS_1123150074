@@ -1,9 +1,10 @@
-import '../entities/cart_entity.dart';
+// lib/features/cart/domain/repositories/cart_repository.dart
+import 'package:uts_1123150074/features/cart/data/models/cart_model.dart';
 
 abstract class CartRepository {
-  Future<List<CartItemEntity>> getCart();
+  Future<CartModel> getCart();
   Future<void> addToCart(int productId, int quantity);
-  Future<void> updateCart(int id, int quantity);
-  Future<void> deleteItem(int id);
+  Future<void> updateCartItem(int cartItemId, int quantity);
+  Future<void> removeCartItem(int cartItemId);
   Future<void> clearCart();
 }

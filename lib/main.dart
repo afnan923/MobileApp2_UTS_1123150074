@@ -8,9 +8,8 @@ import 'package:uts_1123150074/features/auth/presentation/providers/auth_provide
 import 'package:uts_1123150074/features/dashboard/presentation/providers/product_provider.dart';
 // CART IMPORT
 import 'package:uts_1123150074/features/cart/presentation/providers/cart_provider.dart';
-import 'package:uts_1123150074/features/cart/data/repositories/cart_repository_impl.dart';
-import 'package:uts_1123150074/features/cart/data/datasources/cart_remote_datasource.dart';
 import 'package:uts_1123150074/features/dashboard/presentation/providers/theme_provider.dart';
+import 'package:uts_1123150074/features/order/presentation/providers/order_provider.dart';
 
 import 'firebase_options.dart';
 
@@ -27,10 +26,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
-        ChangeNotifierProvider<CartProvider>(
-          create: (context) =>
-              CartProvider(CartRepositoryImpl(CartRemoteDataSource())),
-        ),
+        ChangeNotifierProvider(create: (_) => CartProvider()), // ← BARU
+        ChangeNotifierProvider(create: (_) => OrderProvider()), // ← BARU
       ],
       child: const MyApp(),
     ),
@@ -46,14 +43,12 @@ class MyApp extends StatelessWidget {
       title: 'Paket Alat Pancing',
       debugShowCheckedModeBanner: false,
       // 2. Daftarkan KEDUA tema
-      theme:     AppTheme.light,       // ← dipakai saat ThemeMode.light
-      darkTheme: AppTheme.dark,        // ← dipakai saat ThemeMode.dark
-
-
+      theme: AppTheme.light, // ← dipakai saat ThemeMode.light
+      darkTheme: AppTheme.dark, // ← dipakai saat ThemeMode.dark
       // 3. Tentukan mode aktif dari provider
       themeMode: Provider.of<ThemeProvider>(context).themeMode,
-      //         ↑ berubah saat toggle() dipanggil → seluruh app ikut
 
+      //         ↑ berubah saat toggle() dipanggil → seluruh app ikut
       initialRoute: AppRouter.splash,
       routes: AppRouter.routes,
     );

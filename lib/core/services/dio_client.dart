@@ -23,14 +23,18 @@ class DioClient {
     dio.interceptors.add(InterceptorsWrapper( 
       onRequest: (options, handler) async { 
         debugPrint('[REQUEST] ${options.method} ${options.path}'); 
+        debugPrint('[REQUEST-HEADERS] ${options.headers}');
+        debugPrint('[REQUEST-BODY] ${options.data}');
         handler.next(options); 
       }, 
       onResponse: (response, handler) { 
         debugPrint('[RESPONSE] ${response.statusCode}'); 
+        debugPrint('[RESPONSE-BODY] ${response.data}');
         handler.next(response); 
       }, 
       onError: (error, handler) async { 
         debugPrint('[ERROR] ${error.response?.statusCode}'); 
+        debugPrint('[ERROR-BODY] ${error.response?.data}');
         if (error.response?.statusCode == 401) { 
           await SecureStorageService.clearAll(); // Auto logout 
         } 
